@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
                 id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
                 if confidence < 40:
-                    text = name_dict[id]
+                    text = name_dict[str(id)]
                     print("Hello ", text)
                     response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
                     time.sleep(5)
