@@ -34,6 +34,8 @@ if __name__ == "__main__":
     door = Door()
     door_timer = Timer(args.time, door.enable_door)
     
+    
+    print(" - Start Running System...")
     while True:
         cap = cv2.VideoCapture('http://admin:admin@192.168.50.2/video.cgi?identify_key=984852984&pipe=0')
         if not cap.isOpened():
@@ -48,7 +50,7 @@ if __name__ == "__main__":
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
             faces = face_detector.detectMultiScale(gray)
             
-            print("No face", door.status)
+            # print("No face", door.status)
             for (x, y, w, h) in faces:
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
                 id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
