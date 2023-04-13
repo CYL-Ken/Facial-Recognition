@@ -10,6 +10,7 @@ from threading import Timer
 class Door():
     def __init__(self) -> None:
         self.status = True
+        self.person = ""
 
     def enable_door(self):
         self.status = True
