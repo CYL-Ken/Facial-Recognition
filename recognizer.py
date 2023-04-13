@@ -58,12 +58,17 @@ if __name__ == "__main__":
                 try:
                     if confidence < 40 and door.status == True:
                         text = name_dict[str(id)]
-                        print(f"[{datetime.now()}] Hello ", text)
-                        # door_timer.cancel()
+                        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
+                        
+                        if text == door.person:
+                            break
+                        door.person = text
+                        
                         response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
                         door_timer.start()
                         door.status = False
                     else:
                         print(f"[{datetime.now()}] Who are you?")
+                        door.person = None
                 except:
                     print("==")
