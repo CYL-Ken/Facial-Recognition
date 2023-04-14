@@ -36,8 +36,11 @@ def recognize(img):
             dist = (embedding-data[0]).norm().item()
             comparison.append(dist)
             names.append(data[1])
-            
-        name = names[np.argmin(comparison)]
-        return name
+        
+        if min(comparison) < 0.8:
+            name = names[np.argmin(comparison)]
+            return name
+        else:
+            return "Not in dataset"
     else:
         return "Not in dataset"
