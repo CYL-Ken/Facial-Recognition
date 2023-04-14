@@ -1,6 +1,6 @@
-import os
 import cv2
 import json
+import time
 import argparse
 import requests
 from datetime import datetime
@@ -8,12 +8,31 @@ from threading import Timer
 
 
 class Door():
-    def __init__(self) -> None:
+    def __init__(self, escape_time) -> None:
         self.status = True
         self.person = ""
+        
+        self.escape = escape_time
+        self.open_timer = 0
+        
+        self.counter = {
+            "Yes": 0,
+            "No": 0
+        }
 
-    def enable_door(self):
-        self.status = True
+    def set_door_status(self, enable=True):
+        self.status = enable
+        
+    def open(self):
+        response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
+        print("OPEN!")
+        self.open_timer = time.time()
+        # if (time.time() - self.open_timer) > self.escape:
+        #     # response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
+        #     print("OPEN!")
+        #     self.open_timer = time.time()
+        # else:
+        #     print(" - Too Close!")
 
 if __name__ == "__main__":
     print("<Facial Recognition Recognizer>")
@@ -32,9 +51,7 @@ if __name__ == "__main__":
     with open('name.json') as json_file:
         name_dict = json.load(json_file)
     
-    door = Door()
-    door_timer = Timer(args.time, door.enable_door)
-    
+    door = Door(escape_time=args.time)
     
     print(" - Start Running System...")
     while True:
@@ -51,24 +68,108 @@ if __name__ == "__main__":
             gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
             faces = face_detector.detectMultiScale(gray)
             
-            # print("No face", door.status)
+            text = "Not in dataset"
+            
             for (x, y, w, h) in faces:
                 cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
                 id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
-                try:
-                    if confidence < 40 and door.status == True:
-                        text = name_dict[str(id)]
-                        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
-                        
-                        if text == door.person:
-                            break
-                        door.person = text
-                        
-                        response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
-                        door_timer.start()
-                        door.status = False
+                
+                text = name_dict[str(id)] if confidence < 40 else "Not in dataset"
+                
+                print("DEBUG:", text, door.person, door.status)
+            
+            
+            if text != "Not in dataset":
+                if (time.time()-door.open_timer) > door.escape:
+                    if door.person == text:
+                        door.counter['Yes'] += 1
+                    
+                    door.person = text
+                    if door.counter['Yes'] > 10 and door.status == True:
+                        door.open()
+                        door.set_door_status(False)
+                        # print("Disable Door")
+                        door.counter['Yes'] = 0
+                        door.counter['No'] = 0
+                else:
+                    pass
+                    # print("Too Fast")
+            else:
+                if door.person == text:
+                    door.counter['No'] += 1
+                
+                door.person = text
+                if door.counter['No'] > 15:
+                    # print("Enable Door")
+                    door.set_door_status(True)
+                    door.counter['Yes'] = 0
+                    door.counter['No'] = 0
+            
+            
+            
+            
+            # if text == "Not in dataset":
+            #     pass
+            #     if door.person == text:
+            #         door.counter += 1
+                    
+            #     if door.counter >= 2:
+            #         door.set_door_status(True)
+            # elif door.status == True:
+            #     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
+            #     door.open()
+            #     door.set_door_status(False)
+            #     door.counter = 0
+            
+            # door.person = text
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+"""                
+                if confidence < 40 and door.status == True:
+                    text = name_dict[str(id)]
+                    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
+                    
+                    if text == door.person:
+                        break
+                    door.person = text
+                    door.open()
+                    door.set_door_status(False)
+                else:
+                    print(f"[{datetime.now()}] Who are you?")
+                    text = "Not in dataset"
+                    
+                    if text == door.person:
+                        door.set_door_status(True)
                     else:
-                        print(f"[{datetime.now()}] Who are you?")
-                        door.person = None
-                except:
-                    print("==")
+                        door.set_door_status(False)
+                        
+                    
+                    door.person = "Not in dataset"
+                print(door.status)
+                continue
+                
+                
+            door.person = ""
+            # print("Person: ", door.person)
+"""
