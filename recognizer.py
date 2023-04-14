@@ -6,6 +6,8 @@ import requests
 from datetime import datetime
 from threading import Timer
 
+from predict import recognize
+
 
 class Door():
     def __init__(self, escape_time) -> None:
@@ -27,12 +29,7 @@ class Door():
         response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
         print("OPEN!")
         self.open_timer = time.time()
-        # if (time.time() - self.open_timer) > self.escape:
-        #     # response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
-        #     print("OPEN!")
-        #     self.open_timer = time.time()
-        # else:
-        #     print(" - Too Close!")
+
 
 if __name__ == "__main__":
     print("<Facial Recognition Recognizer>")
@@ -64,19 +61,20 @@ if __name__ == "__main__":
             if not ret:
                 print(" - Cannot Receive Frame!")
                 break
-
-            gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            faces = face_detector.detectMultiScale(gray)
+            
+            # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+            # faces = face_detector.detectMultiScale(gray)
             
             text = "Not in dataset"
+            text = recognize(img)
             
-            for (x, y, w, h) in faces:
-                cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
-                id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
+            # for (x, y, w, h) in faces:
+            #     cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
+            #     id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
                 
-                text = name_dict[str(id)] if confidence < 40 else "Not in dataset"
+            #     text = name_dict[str(id)] if confidence < 40 else "Not in dataset"
                 
-                print("DEBUG:", text, door.person, door.status)
+            #     print("DEBUG:", text, door.person, door.status)
             
             
             if text != "Not in dataset":
@@ -85,7 +83,7 @@ if __name__ == "__main__":
                         door.counter['Yes'] += 1
                     
                     door.person = text
-                    if door.counter['Yes'] > 10 and door.status == True:
+                    if door.counter['Yes'] > 7 and door.status == True:
                         door.open()
                         door.set_door_status(False)
                         # print("Disable Door")
@@ -99,7 +97,7 @@ if __name__ == "__main__":
                     door.counter['No'] += 1
                 
                 door.person = text
-                if door.counter['No'] > 15:
+                if door.counter['No'] > 10:
                     # print("Enable Door")
                     door.set_door_status(True)
                     door.counter['Yes'] = 0
