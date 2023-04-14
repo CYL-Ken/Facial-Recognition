@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Facial Recognition Recognizer")
     parser.add_argument("-w", "--weight", default="face.yml", type=str, help="Model Weight Path")
     parser.add_argument("-v", "--video", default="http://admin:admin@192.168.50.2/video.cgi?identify_key=984852984&pipe=0", type=str, help="Video Streaming Path")
-    parser.add_argument("-t", "--time", default=3, type=int, help="Waiting time between open door")
+    parser.add_argument("-t", "--time", default=5, type=int, help="Waiting time between open door")
     args = parser.parse_args()
     
     print(" - Prepare Face Detection and Recognition Models...")
@@ -78,6 +78,7 @@ if __name__ == "__main__":
             
             
             if text != "Not in dataset":
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
                 if (time.time()-door.open_timer) > door.escape:
                     if door.person == text:
                         door.counter['Yes'] += 1
@@ -91,7 +92,7 @@ if __name__ == "__main__":
                         door.counter['No'] = 0
                 else:
                     pass
-                    # print("Too Fast")
+                    print("Too Fast")
             else:
                 if door.person == text:
                     door.counter['No'] += 1
