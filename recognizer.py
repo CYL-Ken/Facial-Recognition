@@ -84,7 +84,7 @@ if __name__ == "__main__":
                         door.counter['Yes'] += 1
                     
                     door.person = text
-                    if door.counter['Yes'] > 6 and door.status == True:
+                    if door.counter['Yes'] > 3 and door.status == True:
                         door.open()
                         door.set_door_status(False)
                         # print("Disable Door")
@@ -98,7 +98,7 @@ if __name__ == "__main__":
                     door.counter['No'] += 1
                 
                 door.person = text
-                if door.counter['No'] > 8:
+                if door.counter['No'] > 5:
                     # print("Enable Door")
                     door.set_door_status(True)
                     door.counter['Yes'] = 0
