@@ -43,4 +43,4 @@ def recognize(img):
         else:
             return "Not in dataset"
     else:
-        return "Not in dataset"
+        return "No face"
