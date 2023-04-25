@@ -68,14 +68,8 @@ if __name__ == "__main__":
             text = "Not in dataset"
             text = recognize(img)
             
-            # for (x, y, w, h) in faces:
-            #     cv2.rectangle(img, (x, y), (x+w, y+h), (0,255,0), 2)
-            #     id, confidence = recognizer.predict(gray[y:y+h,x:x+w])
-                
-            #     text = name_dict[str(id)] if confidence < 40 else "Not in dataset"
-                
-            #     print("DEBUG:", text, door.person, door.status)
-            
+            if text == "No face":
+                continue
             
             if text != "Not in dataset":
                 print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
@@ -91,7 +85,6 @@ if __name__ == "__main__":
                         door.counter['Yes'] = 0
                         door.counter['No'] = 0
                 else:
-                    pass
                     print("Too Fast")
             else:
                 if door.person == text:
