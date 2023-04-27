@@ -62,9 +62,6 @@ if __name__ == "__main__":
                 print(" - Cannot Receive Frame!")
                 break
             
-            # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            # faces = face_detector.detectMultiScale(gray)
-            
             text = "Not in dataset"
             text = recognize(img)
             

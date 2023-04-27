@@ -8,7 +8,7 @@ from torchvision import datasets
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 filename = "face_embedding.npy"
-dataset = np.load(filename, allow_pickle=True).tolist()
+dataset = np.load(filename, allow_pickle=True).tolist().to(device)
 
 
 workers = 0 if os.name == 'nt' else 4
