@@ -8,7 +8,7 @@ from torchvision import datasets
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 filename = "face_embedding.npy"
-dataset = np.load(filename, allow_pickle=True).tolist().to(device)
+dataset = np.load(filename, allow_pickle=True).tolist()
 
 
 workers = 0 if os.name == 'nt' else 4
@@ -33,7 +33,7 @@ def recognize(img):
         comparison = []
         names = []
         for data in dataset:
-            dist = (embedding-data[0]).norm().item()
+            dist = (embedding-data[0].to(device)).norm().item()
             comparison.append(dist)
             names.append(data[1])
         
