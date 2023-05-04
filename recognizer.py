@@ -41,9 +41,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     print(" - Prepare Face Detection and Recognition Models...")
-    face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-    recognizer = cv2.face.LBPHFaceRecognizer_create()
-    recognizer.read(args.weight)
     
     with open('name.json') as json_file:
         name_dict = json.load(json_file)
