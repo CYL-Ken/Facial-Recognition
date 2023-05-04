@@ -66,7 +66,7 @@ if __name__ == "__main__":
                 continue
             
             if text != "Not in dataset":
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text)
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Hello ", text, door.counter['Yes'])
                 if (time.time()-door.open_timer) > door.escape:
                     if door.person == text:
                         door.counter['Yes'] += 1
