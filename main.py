@@ -84,6 +84,7 @@ if __name__ == "__main__":
     log.info(f"Name Dict: {dataset.get_label_dict()}")
     recognizer = Recognizer(name_dict=dataset.get_label_dict())
     recognizer.create_embeddings(dataloader)
+    log.info(f"Using Device: {recognizer.device}")
     
     config = json.load(open("config.json"))
     
