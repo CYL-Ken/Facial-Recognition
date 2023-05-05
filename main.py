@@ -1,4 +1,5 @@
 import cv2
+import json
 import argparse
 
 from torch.utils.data import DataLoader
@@ -23,6 +24,7 @@ def recognize_frame(image):
 
 def start_streaming(video_path, show_result=True):
     while True:
+        video_path = config["video"] if video_path == "cyl" else video_path
         video = video_path
         cap = cv2.VideoCapture(video)
 
@@ -69,7 +71,8 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--video", default=0, help="Video Stream")
     parser.add_argument("-i", "--image", default=None, help="Video Stream")
     parser.add_argument("-s", "--show", default=True, help="Show Result")
-    parser.add_argument("--door", default=False, help="Control Door")
+    parser.add_argument("-c", "--config")
+    parser.add_argument("--door", default=False, type=bool, help="Control Door")
     args = parser.parse_args()
     
     
@@ -82,13 +85,14 @@ if __name__ == "__main__":
     recognizer = Recognizer(name_dict=dataset.get_label_dict())
     recognizer.create_embeddings(dataloader)
     
-    if args.door:
-        door = DoorController()
-        
+    config = json.load(open("config.json"))
     
+    if args.door:
+        door = DoorController(open_link = config["open"])
     
     if args.image != None:
         log.info("Image mode")
+        # Not yet!
         pass
     else:
         log.info("Video mode")
