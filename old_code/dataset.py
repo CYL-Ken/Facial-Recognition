@@ -1,4 +1,5 @@
 import os
+import piexif
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
@@ -32,6 +33,7 @@ class faceDataset(Dataset):
         # --------------------------------------------
         
         path = self.image_path[index]
+        piexif.remove(path)
         image = Image.open(path).convert('RGB')
         if self.transform is not None:
             image = self.transform(image)

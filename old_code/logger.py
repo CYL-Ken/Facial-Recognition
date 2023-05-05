@@ -25,7 +25,7 @@ class CustomFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
 
-class Logger(object):
+class Log(object):
     def __init__(self, logger=None, log_path=""):
 
         self.logger = logging.getLogger(logger)

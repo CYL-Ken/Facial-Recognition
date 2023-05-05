@@ -1,163 +1,95 @@
-"""
-    Facial-Recognition
-"""
 import cv2
-import time
 import argparse
-import requests
 
-from logger import Log
-from facial_recognizer import FacialRecognizer
+from torch.utils.data import DataLoader
 
-        
-class Door():
-    def __init__(self, escape_time) -> None:
-        self.status = True
-        self.person = ""
-        
-        self.escape = escape_time
-        self.open_timer = 0
-        
-        self.counter = {
-            "Yes": 0,
-            "No": 0
-        }
+from logger import Logger
+from dataset import faceDataset
+from recognizer import Recognizer
+from door_controller import DoorController
 
-    def set_door_status(self, enable=True):
-        self.status = enable
+
+def recognize_frame(image):
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    ret, box = recognizer.detect_face(image=image)
+    if ret:
+        x1, y1, x2, y2 = box[0], box[1], box[2], box[3]
+        face = image[y1:y2, x1:x2]
+        face = cv2.resize(face, (160, 160))
+        result = recognizer.inference(face)
+        return result, (x1, y1, x2, y2)
+    else:
+        return None, (0,0,0,0)
+
+def start_streaming(video_path, show_result=True):
+    while True:
+        video = video_path
+        cap = cv2.VideoCapture(video)
+
+        if not cap.isOpened():
+            log.warning("Waiting camera...")
         
-    def open(self):
-        response = requests.get(r"http://admin:admin@192.168.50.2/DP/doorunlock.ncgi?id=2635107228")
-        print("OPEN!")
-        self.open_timer = time.time()
-        
-    def process(self, text):
-        if text != "Guest":
-            log.info(f"Hello {text}")
-            if (time.time()-self.open_timer) > self.escape:
-                if self.person == text:
-                    self.counter['Yes'] += 1
+        while True:
+            ret, image = cap.read()
+            if not ret:
+                log.warning("Cannot receive frame!")
+                break
+            try:
+                result, (x1, y1, x2, y2) = recognize_frame(image=image)    
+            except Exception as e:
+                log.warn(f"Got Exception: {e}")
+                result = None
                 
-                self.person = text
-                if self.counter['Yes'] > 3 and self.status == True:
-                    # self.open()
-                    self.set_door_status(False)
-                    # print("Disable Door")
-                    self.counter['Yes'] = 0
-                    self.counter['No'] = 0
-            else:
-                print("Too Fast")
-        else:
-            if self.person == text:
-                self.counter['No'] += 1
+            if args.door:
+                door.visit(result)
             
-            self.person = text
-            if self.counter['No'] > 5:
-                # print("Enable Door")
-                self.set_door_status(True)
-                self.counter['Yes'] = 0
-                self.counter['No'] = 0
+            if show_result == False:
+                continue
+            
+            if result != None:
+                cv2.rectangle(image, (x1, y1), (x2, y2), (214, 217, 8), 2, cv2.LINE_AA)
+                cv2.putText(image, result, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 2, (214, 217, 8), 2, cv2.LINE_AA)
 
+            image = cv2.resize(image, (image.shape[1]//2, image.shape[0]//2))
+            cv2.imshow("Result", image)
+            if cv2.waitKey(1) == ord('q') or cv2.waitKey(1) == 27:
+                break
+        
+        cap.release()
+        cv2.destroyAllWindows()
+        
+        
+        
+        
 if __name__ == "__main__":
-    
-    log = Log().get_log()
+    log = Logger().get_log()
     
     parser = argparse.ArgumentParser(description="Facial Recognition")
-    parser.add_argument("-x", "--dataset", default="face_dataset", type=str, help="Dataset Path")
-    parser.add_argument("-v", "--video", default="http://admin:admin@192.168.50.2/video.cgi?identify_key=984852984&pipe=0", type=str, help="Video Streaming Path")
-    parser.add_argument("-t", "--time", default=5, type=int, help="Waiting time between open door")
-    parser.add_argument("-i", "--image", default=None)
-    parser.add_argument("-d", "--door", default=True, help="For open door")
-    parser.add_argument("-e", "--embedding", default=None, help="Custom dataset")
-
+    parser.add_argument("-d", "--dataset", default="face_dataset", type=str, help="Dataset Path")
+    parser.add_argument("-v", "--video", default=0, help="Video Stream")
+    parser.add_argument("-i", "--image", default=None, help="Video Stream")
+    parser.add_argument("-s", "--show", default=True, help="Show Result")
+    parser.add_argument("--door", default=False, help="Control Door")
     args = parser.parse_args()
     
-    # Door Setting
-    if args.door == True:
-        door = Door(escape_time=args.time)
     
-    # Prepare Embedding Data and Models
-    recognizer = FacialRecognizer(dataset_path=args.dataset)
-    recognizer.prepare_model()
-    recognizer.create_embeddings(embedding_data=args.embedding)
+    log.info(f"Prepare Dataset: {args.dataset}")
+    dataset = faceDataset(path=args.dataset)
+    dataloader = DataLoader(dataset=dataset, collate_fn=lambda x: x[0])
+
+    log.info(f"Create Embedding Data")
+    log.info(f"Name Dict: {dataset.get_label_dict()}")
+    recognizer = Recognizer(name_dict=dataset.get_label_dict())
+    recognizer.create_embeddings(dataloader)
+    
+    if args.door:
+        door = DoorController()
+        
+    
     
     if args.image != None:
-        log.info("<Image Mode>")
-        image = cv2.imread(args.image)
-        if len(image) > 0:
-            log.info("Start recognize image")
-            recognizer.inference(image)
+        log.info("Image mode")
+        pass
     else:
-        while True:
-            video = args.video
-            cap = cv2.VideoCapture(video)
-            
-            if not cap.isOpened():
-                log.warning("Waiting camera...")
-            log.info("Start recognize image from video")
-            while True:
-                ret, image = cap.read()
-                if not ret:
-                    log.warning("Cannot receive frame!")
-                    break
-            
-                text, (x1, y1, x2, y2) = recognizer.inference(image)
-                w, h, c = image.shape[0], image.shape[1], image.shape[2]
-                if w > 0 and h > 0:
-                    
-                    if args.door == True and text != "No face" and len(text)>0:
-                        door.process(text)
-                    
-                    cv2.rectangle(image, (x1, y1), (x2, y2), (214, 217, 8), 2, cv2.LINE_AA)
-                    cv2.putText(image, text, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 2, (214, 217, 8), 2, cv2.LINE_AA)
-                    image = cv2.resize(image, (image.shape[1]//2, image.shape[0]//2))
-                    cv2.imshow("Result", image)
-                    if cv2.waitKey(1) == ord('q') or cv2.waitKey(1) == 27:
-                        break
-                else:
-                    continue
-            cap.release()
-            cv2.destroyAllWindows()
-            
-            
-            
-            # cap = cv2.VideoCapture('http://admin:admin@192.168.50.2/video.cgi?identify_key=984852984&pipe=0')
-            # if not cap.isOpened():
-            #     log.warning(" - Waiting Camera...")
-            #     continue
-            # while True:
-            #     ret, img = cap.read()
-            #     if not ret:
-            #         log.warning(" - Cannot Receive Frame!")
-            #         break
-                
-            #     text = recognizer.inference(img)
-                
-            #     if text == "No face":
-            #         continue
-                
-            #     if text != "Not in dataset":
-            #         log.info(f"Hello ", text)
-            #         if (time.time()-door.open_timer) > door.escape:
-            #             if door.person == text:
-            #                 door.counter['Yes'] += 1
-                        
-            #             door.person = text
-            #             if door.counter['Yes'] > 3 and door.status == True:
-            #                 door.open()
-            #                 door.set_door_status(False)
-            #                 # print("Disable Door")
-            #                 door.counter['Yes'] = 0
-            #                 door.counter['No'] = 0
-            #         else:
-            #             print("Too Fast")
-            #     else:
-            #         if door.person == text:
-            #             door.counter['No'] += 1
-                    
-            #         door.person = text
-            #         if door.counter['No'] > 5:
-            #             # print("Enable Door")
-            #             door.set_door_status(True)
-            #             door.counter['Yes'] = 0
-            #             door.counter['No'] = 0
+        log.info("Video mode")
+        start_streaming(args.video)

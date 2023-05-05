@@ -2,8 +2,10 @@ import cv2
 import numpy as np
 
 import torch
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from facenet_pytorch import MTCNN, InceptionResnetV1
+
 
 class Recognizer():
     def __init__(self, name_dict) -> None:
@@ -63,6 +65,7 @@ class Recognizer():
             comparison.append(dist)
             names.append(data[1])
         
+        print(comparison)
         if min(comparison) < threshold:
             name = names[np.argmin(comparison)]
             return name
@@ -71,9 +74,11 @@ class Recognizer():
         
 if __name__ == "__main__":
         
+    from logger import Log
     from dataset import faceDataset
-    from torch.utils.data import DataLoader
-
+    
+    log = Log().get_log()
+    
     # transform = transforms.Compose([
     #     transforms.ToPILImage(),
     #     transforms.Resize((512,512)),
@@ -91,8 +96,8 @@ if __name__ == "__main__":
 
 
     # Inference
-    image = cv2.imread("face_dataset/Penny/Penny.jpg")
-    # image = cv2.imread("cyl_dataset/Ken/Ken.jpg")
+    # image = cv2.imread("face_dataset/Penny/Penny.jpg")
+    image = cv2.imread("cyl_dataset/Ken/Ken.jpg")
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     ret, box = recognizer.detect_face(image=image)
