@@ -37,7 +37,9 @@ def start_streaming(video_path, show_result=True):
                 log.warning("Cannot receive frame!")
                 break
             try:
-                result, (x1, y1, x2, y2) = recognize_frame(image=image)    
+                result, (x1, y1, x2, y2) = recognize_frame(image=image)
+                if result != None:
+                    log.info(f"Hello {result}")
             except Exception as e:
                 log.warning(f"Got Exception: {e}")
                 result = None
