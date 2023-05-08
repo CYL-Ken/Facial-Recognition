@@ -43,7 +43,11 @@ def start_streaming(video_path, show_result=True):
                 result = None
                 
             if args.door:
-                door.visit(result)
+                ret, name = door.visit(result)
+                if ret == True:
+                    log.info(f"Hello, {name}.")
+                elif name != "No Person":
+                    log.info(f"Found guest!")
             
             if show_result == False:
                 continue
