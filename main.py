@@ -75,7 +75,6 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--video", default=0, help="Video Stream")
     parser.add_argument("-i", "--image", default=None, help="Video Stream")
     parser.add_argument("-s", "--show", default=True, help="Show Result")
-    parser.add_argument("-c", "--config")
     parser.add_argument("--door", default=False, type=bool, help="Control Door")
     args = parser.parse_args()
     
