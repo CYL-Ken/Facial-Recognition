@@ -13,7 +13,6 @@ class DoorController():
         if (time.time() - self.open_timer) < self.wait_time:
             return
         response = requests.get(self.open_link)
-        print("OPEN!")
         self.open_timer = time.time()
         
     def visit(self, text):
@@ -22,6 +21,7 @@ class DoorController():
         self.checker.pop(0)
         if name != "Guest" and name != "No Person":
             if self.checker.count(name) > 3:
+                print(f"Open door for {name}")
                 self.open()
                 return True, name
         return False, name
