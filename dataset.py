@@ -1,5 +1,4 @@
 import os
-import piexif
 from PIL import Image
 from torch.utils.data.dataset import Dataset
 
@@ -33,7 +32,7 @@ class faceDataset(Dataset):
         # --------------------------------------------
         
         path = self.image_path[index]
-        piexif.remove(path)
+        self.fix_image_orientation(path)
         image = Image.open(path).convert('RGB')
         if self.transform is not None:
             image = self.transform(image)
@@ -50,3 +49,25 @@ class faceDataset(Dataset):
     
     def get_label_dict(self):
         return {k: v for k, v in enumerate(self.name)}
+    
+    def fix_image_orientation(self, image_path):
+        try:
+            image = Image.open(image_path)
+            
+            # 檢查圖片方向 (Orientation)
+            exif = image._getexif()
+            if exif is not None and 0x0112 in exif:
+                orientation = exif[0x0112]
+                if orientation == 3:
+                    image = image.rotate(180, expand=True)
+                elif orientation == 6:
+                    image = image.rotate(-90, expand=True)
+                elif orientation == 8:
+                    image = image.rotate(90, expand=True)
+            
+            # 儲存修正後的圖片
+            image.save(image_path)
+            
+            
+        except Exception as e:
+            print("Error fixing image orientation:", e)
