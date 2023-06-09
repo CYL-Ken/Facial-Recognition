@@ -33,6 +33,7 @@ def start_streaming(video_path, show_result=True):
         
         while True:
             ret, image = cap.read()
+            #cap.release()
             if not ret:
                 log.warning("Cannot receive frame!")
                 break
@@ -61,7 +62,7 @@ def start_streaming(video_path, show_result=True):
             if cv2.waitKey(1) == ord('q') or cv2.waitKey(1) == 27:
                 break
         
-        cap.release()
+        cap.release()       
         cv2.destroyAllWindows()
         
         
