@@ -89,6 +89,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     
+    
     log.info(f"Prepare Dataset: {args.dataset}")
     dataset = faceDataset(path=args.dataset)
     dataloader = DataLoader(dataset=dataset, collate_fn=lambda x: x[0])
