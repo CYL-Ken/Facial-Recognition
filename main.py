@@ -1,5 +1,6 @@
 import cv2
 import json
+import time
 import argparse
 
 from torch.utils.data import DataLoader
@@ -8,19 +9,25 @@ from logger import Logger
 from dataset import faceDataset
 from recognizer import Recognizer
 from door_controller import DoorController
+from detector import FaceDetector
 
 
 def recognize_frame(image):
+    """
+        MTCNN + facenet 0.2s (on MSI)
+        Ultra face is faster!
+    """
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    ret, box = recognizer.detect_face(image=image)
-    if ret:
+    boxes = face_detector.inference(image)
+    if len(boxes) == 0:
+        return None, (0,0,0,0)
+    else:
+        box = boxes[0]
         x1, y1, x2, y2 = box[0], box[1], box[2], box[3]
         face = image[y1:y2, x1:x2]
         face = cv2.resize(face, (160, 160))
         result = recognizer.inference(face)
         return result, (x1, y1, x2, y2)
-    else:
-        return None, (0,0,0,0)
 
 def start_streaming(video_path, show_result=True):
     while True:
@@ -38,7 +45,9 @@ def start_streaming(video_path, show_result=True):
                 log.warning("Cannot receive frame!")
                 break
             try:
+                start_time = time.time()
                 result, (x1, y1, x2, y2) = recognize_frame(image=image)
+                log.debug(f"Inference time: {time.time() - start_time}")
             except Exception as e:
                 # log.warning(f"Got Exception: {e}")
                 result = None
@@ -75,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", default="face_dataset", type=str, help="Dataset Path")
     parser.add_argument("-v", "--video", default=0, help="Video Stream")
     parser.add_argument("-i", "--image", default=None, help="Video Stream")
-    parser.add_argument("-s", "--show", default=True, help="Show Result")
+    parser.add_argument("--show", default=False, help="Show Result")
     parser.add_argument("--door", default=False, type=bool, help="Control Door")
     args = parser.parse_args()
     
@@ -101,4 +110,5 @@ if __name__ == "__main__":
         pass
     else:
         log.info("Video mode")
-        start_streaming(args.video)
+        face_detector = FaceDetector()
+        start_streaming(args.video, args.show)

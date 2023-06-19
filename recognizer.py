@@ -74,13 +74,6 @@ if __name__ == "__main__":
     from dataset import faceDataset
     from torch.utils.data import DataLoader
 
-    # transform = transforms.Compose([
-    #     transforms.ToPILImage(),
-    #     transforms.Resize((512,512)),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    # ])
-
     dataset = faceDataset(path="cyl_dataset", transform=None)
 
     dataloader = DataLoader(dataset=dataset, collate_fn=lambda x: x[0])
