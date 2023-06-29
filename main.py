@@ -1,33 +1,23 @@
+import os
 import cv2
 import json
 import time
 import argparse
 
-from torch.utils.data import DataLoader
-
 from logger import Logger
-from dataset import faceDataset
-from recognizer import Recognizer
+
 from door_controller import DoorController
-from detector import FaceDetector
+from face_recognizer import FaceRecognizer
 
 
 def recognize_frame(image):
-    """
-        MTCNN + facenet 0.2s (on MSI)
-        Ultra face is faster!
-    """
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    boxes = face_detector.inference(image)
+    ret, face, boxes = faceRecognizer.detectFace(original_image=image)
     if len(boxes) == 0:
         return None, (0,0,0,0)
     else:
-        box = boxes[0]
-        x1, y1, x2, y2 = box[0], box[1], box[2], box[3]
-        face = image[y1:y2, x1:x2]
-        face = cv2.resize(face, (160, 160))
-        result = recognizer.inference(face)
-        return result, (x1, y1, x2, y2)
+        result = faceRecognizer.recognizeFace(face=face, debug=True, threshold=12)
+        return result, boxes
 
 def start_streaming(video_path, show_result=True):
     while True:
@@ -46,10 +36,10 @@ def start_streaming(video_path, show_result=True):
                 break
             try:
                 start_time = time.time()
-                result, (x1, y1, x2, y2) = recognize_frame(image=image)
+                result, boxes = recognize_frame(image=image)
                 log.debug(f"Inference time: {time.time() - start_time}")
             except Exception as e:
-                # log.warning(f"Got Exception: {e}")
+                log.warning(f"Got Exception: {e}")
                 result = None
                 
             if args.door:
@@ -63,6 +53,11 @@ def start_streaming(video_path, show_result=True):
                 continue
             
             if result != None:
+                x1 = boxes[0][0]
+                y1 = boxes[0][1]
+                x2 = boxes[0][2]
+                y2 = boxes[0][3]
+
                 cv2.rectangle(image, (x1, y1), (x2, y2), (214, 217, 8), 2, cv2.LINE_AA)
                 cv2.putText(image, result, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 2, (214, 217, 8), 2, cv2.LINE_AA)
 
@@ -88,17 +83,11 @@ if __name__ == "__main__":
     parser.add_argument("--door", default=False, type=bool, help="Control Door")
     args = parser.parse_args()
     
-    
+    faceRecognizer = FaceRecognizer()
     
     log.info(f"Prepare Dataset: {args.dataset}")
-    dataset = faceDataset(path=args.dataset)
-    dataloader = DataLoader(dataset=dataset, collate_fn=lambda x: x[0])
-
-    log.info(f"Create Embedding Data")
-    log.info(f"Name Dict: {dataset.get_label_dict()}")
-    recognizer = Recognizer(name_dict=dataset.get_label_dict())
-    recognizer.create_embeddings(dataloader)
-    log.info(f"Using Device: {recognizer.device}")
+    faceRecognizer.initFeatureDataset(dataset_path=args.dataset, 
+                                      label_list=os.listdir(args.dataset))
     
     config = json.load(open("config.json"))
     
@@ -111,5 +100,4 @@ if __name__ == "__main__":
         pass
     else:
         log.info("Video mode")
-        face_detector = FaceDetector()
         start_streaming(args.video, args.show)

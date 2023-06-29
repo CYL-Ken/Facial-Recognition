@@ -3,3 +3,4 @@ facenet
 .vscode
 __pycache__
 test.py
+onnx_model_debug.py
