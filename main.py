@@ -16,7 +16,7 @@ def recognize_frame(image):
     if len(boxes) == 0:
         return None, (0,0,0,0)
     else:
-        result = faceRecognizer.recognizeFace(face=face, debug=True, threshold=12)
+        result = faceRecognizer.recognizeFace(face=face, debug=False, threshold=11)
         return result, boxes
 
 def start_streaming(video_path, show_result=True):
